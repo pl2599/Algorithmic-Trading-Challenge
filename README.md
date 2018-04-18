@@ -10,6 +10,8 @@
 
 Term: Spring 2018
 
+![](https://github.com/GU4243-ADS/project-4-open-project-group3/blob/master/figs/cover.jpg)
+
 + Project title: Develop new models to accurately predict the market response to large trades
 + Team Number: Group 3 
 + Team Members: Kai Li, Jiongjiong Li, Wanting Chenting, Chunzi Wang, Pak Kin Lai
