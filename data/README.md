@@ -6,7 +6,7 @@ The data directory contains data used in the analysis. This is treated as read o
 
 [data folder](https://drive.google.com/open?id=1CNF0qXfl7rCFtb5HD8zU-GsjXCX1hqFO)
 
-sample.Rdata - we stratified sampled around 50000 rows with equal proportions with regard to security_id.
-sample_train.Rdata - The train set to be used to fit the model
-sample_test.Rdata - The test set to be used to predict and cross validate
-test.Rdata - A seperate dataset stratified sampled with equal proportions to be tested
+* sample.Rdata - we stratified sampled around 50000 rows with equal proportions with regard to security_id.
+* sample_train.Rdata - The train set to be used to fit the model
+* sample_test.Rdata - The test set to be used to predict and cross validate
+* test.Rdata - A seperate dataset stratified sampled with equal proportions to be tested
