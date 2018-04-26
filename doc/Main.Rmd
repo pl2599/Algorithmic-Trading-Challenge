@@ -1,0 +1,98 @@
+---
+title: "Main"
+author: "Pak Kin Lai, pl2599"
+date: "4/6/2018"
+output: pdf_document
+---
+
+### Step 0: Specify Directories and Source
+
+```{r wkdir}
+setwd("~/Documents/GitHub/project-4-open-project-group3/doc") 
+source("../lib/functions.R")
+```
+
+### Step 1: Setup Controls
+
+```{r setup, echo=FALSE}
+read_data <- F
+process_data <- F
+create_models <- T
+make_pred <- F
+run_LR <- T
+```
+
+### Step 2: Load Data and Make Features
+
+```{r}
+# if(read_data)
+# {
+#   train <- read.csv("../data/training.csv", as.is = TRUE, header = TRUE)
+#   #test <- read.csv("../data/testing.csv", as.is = TRUE, header = TRUE)
+#   test <- train[(nrow(train)- 49999):nrow(train),]
+#   save(train, file = "../output/train.Rdata")
+#   save(test, file = "../output/test.Rdata")
+#   
+# }
+
+load("../output/sample_train.RData")
+load("../output/sample_test.RData")
+```
+
+### Step 3: Process Data
+
+```{r}
+# if(process_data)
+# {
+#   if(run_LR)
+#   {
+#     train_LR <- LR_data_process(sample_train)
+#     save(train_LR, file = "../output/train_LR.Rdata")
+#   }
+# }
+
+```
+
+### Step 4: Create Models
+
+```{r}
+if(create_models)
+{
+  if(run_LR)
+  {
+    #load("../output/train_LR.RData")
+
+    #LR_models <- create_LR_models(train_LR)
+    LR_models <- create_LR_models(sample_train)
+    save(LR_models, file = "../output/LR_models.RData")
+  }
+}
+```
+
+### Step 5: Make Predictions
+
+```{r}
+if(make_pred)
+{
+  if(run_LR)
+  {
+    load("../output/LR_models.RData")
+    
+    LR_predictions <- make_predictions(LR_models, sample_test)
+    save(LR_predictions, file = "../output/LR_predictions.RData")
+  }
+}
+```
+
+### Step 6: Calculate RMSE
+
+```{r}
+LR_RMSE <- evaluate_RMSE(LR_predictions, sample_test)
+```
+
+
+### Step 7: Summarize RMSE
+
+```{r}
+cat("RMSE for LR Model =", LR_RMSE, "\n")
+```
