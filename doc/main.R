@@ -57,8 +57,8 @@ arima <- function(x){
   fcast <- fcast$mean
 }
 
-pred <- apply(train_xts[1:50,],2,arima)
-
+train_pred <- apply(train_xts[1:50,],2,arima)
+save(train_pred, file = "../output/train_pred.Rdata")
 
 times <- seq(as.Date("2017-05-01"),length=100,by="days")
 test_xts <- xts(test_mat,order.by = times)
