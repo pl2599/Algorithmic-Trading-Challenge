@@ -1,0 +1,150 @@
+---
+title: "Random Forest"
+author: "Kai"
+date: "April 25, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+
+
+```
+
+## Including Plots
+
+
+
+```{r}
+# loading data
+
+load("../data/sample_train.Rdata")
+
+
+```
+
+
+
+
+```{r}
+# Data processing
+# Seperating data based on Buyer or seller
+
+
+data_b <- sample_train[,2:307]
+
+data_bid <- data_b[,1:6]
+data_ask <- data_b[,1:6]
+
+data_bid <- data_b[,1:6]
+
+for (i in 0:49){
+  a <- 7+i*4
+  b <- 9+i*4
+  data_bid <- cbind(data_bid,data_b[,a:b])
+}
+
+for (i in 0:48){
+  a <- 208+i*2
+  data_bid <- cbind(data_bid,data_b[,a])
+}
+
+for (i in 0:49){
+  a <- 7+i*4
+  b <- 8+i*4
+  c <- 10+i*4
+  data_ask <- cbind(data_ask,data_b[,a:b])
+  data_ask <- cbind(data_ask,data_b[,c])
+}
+
+
+for (i in 0:48){
+  a <- 209+i*2
+  data_ask <- cbind(data_ask,data_b[,a])
+}
+
+```
+
+
+
+```{r}
+RF_data <- matrix(NA, nrow = nrow(data_b)*48 , ncol = 205)
+RF_data <- as.data.frame(RF_data)
+
+for (i in 1:nrow(data_b)){
+  for (j in 0:47){
+    RF_data[i+j,1:6] <- data_b[i, 1:6]
+    RF_data[i+j,7:206] <- data_b[i , 7+j:206+j]
+  }
+}
+
+```
+
+
+```{r}
+
+RF_data_bid <- data_b[,6+4*47+3]
+RF_data_bid <- as.data.frame(RF_data_bid)
+
+for (i in 48:50){
+  a <- 6+4*i+3
+  RF_data_bid <- cbind(RF_data_bid, data_b[,a])
+}
+
+for (i in 0:49){
+  a <- 6+50*4+1+i*2
+  RF_data_bid <- cbind(RF_data_bid, data_b[,a])
+}
+
+RF_bid <- RF_data_bid[1,1:5]
+t <- system.time(
+  for (i in 1:nrow(RF_data_bid)){
+    for (j in 1:50){
+      RF_bid <- rbind(RF_bid,RF_data_bid[i,j:j+4])
+    }
+    print(i)
+  })
+
+save(RF_bid, file = "../output/RF_bid.Rdata")
+
+
+
+
+
+```
+
+
+```{r}
+
+predict_RF  <- function (model, test){
+  predict_RF <- matrix(NA, nrow = nrow(test), ncorl=50)
+  
+  for(i in 1:row(test)){
+    for (j in 1:50){
+  predict_RF[i,j] = predict(model[j], newdata = tes)
+    }
+  }
+  return(predict_RF)
+}
+
+
+evalution <- function(predicted, actual) {
+  library(metrics)
+  rmse <- rmse(actual, predicted)
+  
+  return(rmse)
+}
+
+
+```
+
+
