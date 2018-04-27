@@ -5,6 +5,7 @@ library("tseries")
 library("forecast")
 library(MASS)
 library("car")
+library("Metrics")
 
 
 train_mat <- data_to_ts(sample_train)
@@ -59,8 +60,14 @@ arima <- function(x){
 
 train_pred <- apply(train_xts[1:50,],2,arima)
 save(train_pred, file = "../output/train_pred.Rdata")
+rmse(train_mat[51:100,],train_pred)
 
 times <- seq(as.Date("2017-05-01"),length=100,by="days")
 test_xts <- xts(test_mat,order.by = times)
 test_pred <- apply(test_xts[1:50,],2,arima)
+save(test_pred, file = "../output/test_pred.Rdata")
+rmse(test_mat[51:100,],test_pred)
+
+
+
 
