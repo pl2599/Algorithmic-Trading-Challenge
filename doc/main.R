@@ -7,6 +7,16 @@ library(MASS)
 library("car")
 library("Metrics")
 
+install.packages("PCAmixdata")
+library("PCAmixdata")
+library("dplyr")
+install.packages("FactoMineR")
+library("FactoMineR")
+
+install.packages("dummies")
+library("dummies")
+
+setwd("/Users/wcheng/Desktop/Spring 2018/data science/project-4-open-project-group3/doc")
 
 train_mat <- data_to_ts(sample_train)
 save(train_mat,file ="../data/train_mat.RData")
@@ -68,6 +78,43 @@ test_pred <- apply(test_xts[1:50,],2,arima)
 save(test_pred, file = "../output/test_pred.Rdata")
 rmse(test_mat[51:100,],test_pred)
 
+#######################################################################################################
 
+
+# I first tried automatically using PCA mix
+train_clean <- sample_train[,1:207]
+train_clean <- train_clean[,!(grepl("time",colnames(train_clean)) | grepl("transtype",colnames(train_clean)))]
+train_clean <- train_clean[,-1]
+train_clean$security_id <- as.factor(train_clean$security_id)
+X.quali <- train_clean %>%
+  select(c(security_id,initiator))
+X.quali <- apply(as.matrix(X.quali),2,as.character)
+X.quanti <- train_clean[,-c(1,6)]
+X.quanti <- apply(as.matrix(X.quanti),2,as.numeric)
+X.quanti <- scale(X.quanti)
+
+PCA <- PCAmix(X.quanti, X.quali, rename.level = F, graph = T)
+PCA$quanti$contrib
+# we can see that p_tcount, p_value, trade_vwap and trade_volume are the most important ones for dimension 2-5.
+
+
+# Get the PCA new predictors as features for train and for test
+train_pca <- dummy.data.frame(as.data.frame(train_clean), names = c("security_id","initiator"))
+prin_comp <- prcomp(train_pca, scale. = T)
+prop_varex <- prin_comp$sdev ^ 2/sum(prin_comp$sdev ^ 2)
+plot(prop_varex, xlab = "Principal Component",
+     ylab = "Proportion of Variance Explained",
+     type = "b")
+train_pca <- prin_comp$x[,c(1,2)]
+
+test_clean <- sample_test[,1:207]
+test_clean <- test_clean[,!(grepl("time",colnames(test_clean)) | grepl("transtype",colnames(test_clean)))]
+test_clean <- test_clean[,-1]
+test_pca <- dummy.data.frame(as.data.frame(test_clean), names = c("security_id","initiator"))
+test_pca <- predict(prin_comp,test_pca)
+test_pca <- test_pca[,c(1,2)]
+
+save(train_pca, file = "../output/train_pca.Rdata")
+save(test_pca, file = "../output/test_pca.Rdata")
 
 
