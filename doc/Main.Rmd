@@ -4,6 +4,15 @@ author: "Pak Kin Lai, pl2599"
 date: "4/6/2018"
 output: pdf_document
 ---
+```{r, warning = FALSE}
+
+if(!require("ggplot2")){
+  install.packages("ggplot2")
+}
+
+library(ggplot2)
+```
+
 
 ### Step 0: Specify Directories and Source
 
@@ -15,6 +24,7 @@ source("../lib/functions.R")
 ### Step 1: Setup Controls
 
 ```{r setup, echo=FALSE}
+run_visual <- F
 read_data <- F
 process_data <- F
 create_models <- T
@@ -37,6 +47,147 @@ run_LR <- T
 
 load("../output/sample_train.RData")
 load("../output/sample_test.RData")
+```
+
+
+### Step 2.5: Data Visualization
+
+```{r}
+if(run_visual)
+{
+  sample_train$security_id <- factor(sample_train$security_id)
+  vwap_train <- ggplot(sample_train, aes(x = security_id, y = trade_vwap, color = trade_vwap)) + geom_point() +     scale_color_gradient(low = "lightgreen", high = "darkblue") + 
+    theme(axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())
+  vwap_train
+  ggsave("../figs/vwap_train.png")
+  
+  
+  vwap_test <- ggplot(sample_test, aes(x = security_id, y = trade_vwap, color = trade_vwap)) + geom_point() +     scale_color_gradient(low = "lightgreen", high = "darkblue") + 
+    theme(axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())
+  vwap_test
+  ggsave("../figs/vwap_test.png")
+  
+  subset_train <- sample_train[sample_train$security_id == 25 | sample_train$security_id == 50 | sample_train$security_id == 75 | sample_train$security_id == 100,]
+  subset_test <- sample_test[sample_test$security_id == 25 | sample_test$security_id == 50 |
+                                sample_test$security_id == 75 | sample_test$security_id == 100,]
+  
+  train_price_bid <- data.frame(NA, nrow = 400, ncol = 3)
+  colnames(train_price_bid) <- c("Security_Id", "Event_t", "Price")
+  train_price_ask <- data.frame(NA, nrow = 400, ncol = 3)
+  colnames(train_price_ask) <- c("Security_Id", "Event_t", "Price")
+  
+  train_price_bid_temp <- data.frame(NA, nrow = 100, ncol = 3)
+   colnames(train_price_bid_temp) <- c("Security_Id", "Event_t", "Price")
+   
+   train_price_ask_temp <- data.frame(NA, nrow = 100, ncol = 3)
+   colnames(train_price_ask_temp) <- c("Security_Id", "Event_t", "Price")
+  
+  for(i in 1:50)
+  {
+    train_price_bid[i, 1] <- 25
+    train_price_bid[i, 2] <- i
+    train_price_bid[i, 3] <- colMeans(subset_train[subset_train$security_id == 25, 6 + i*4])
+    train_price_ask[i, 1] <- 25
+    train_price_ask[i, 2] <- i
+    train_price_ask[i, 3] <- colMeans(subset_train[subset_train$security_id == 25, 7 + i*4])
+  }
+  for(i in 51:100)
+  {
+    train_price_bid[i, 1] <- 25
+    train_price_bid[i, 2] <- i
+    train_price_bid[i, 3] <- colMeans(subset_train[subset_train$security_id == 25, 106 + i*2])
+    train_price_ask[i, 1] <- 25
+    train_price_ask[i, 2] <- i
+    train_price_ask[i, 3] <- colMeans(subset_train[subset_train$security_id == 25, 107 + i*2])
+  }
+  
+  for(i in 1:50)
+  {
+    train_price_bid_temp[i, 1] <- 50
+    train_price_bid_temp[i, 2] <- i
+    train_price_bid_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 50, 6 + i*4])
+    train_price_ask_temp[i, 1] <- 50
+    train_price_ask_temp[i, 2] <- i
+    train_price_ask_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 50, 7 + i*4])
+    
+  }
+  for(i in 51:100)
+  {
+    train_price_bid_temp[i, 1] <- 50
+    train_price_bid_temp[i, 2] <- i
+    train_price_bid_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 50, 106 + i*2])
+    train_price_ask_temp[i, 1] <- 50
+    train_price_ask_temp[i, 2] <- i
+    train_price_ask_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 50, 107 + i*2])
+  }
+   
+   train_price_bid <- rbind(train_price_bid, train_price_bid_temp)
+   train_price_ask <- rbind(train_price_ask, train_price_ask_temp)
+   
+   for(i in 1:50)
+  {
+    train_price_bid_temp[i, 1] <- 75
+    train_price_bid_temp[i, 2] <- i
+    train_price_bid_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 75, 6 + i*4])
+    train_price_ask_temp[i, 1] <- 75
+    train_price_ask_temp[i, 2] <- i
+    train_price_ask_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 75, 7 + i*4])
+    
+  }
+  for(i in 51:100)
+  {
+    train_price_bid_temp[i, 1] <- 75
+    train_price_bid_temp[i, 2] <- i
+    train_price_bid_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 75, 106 + i*2])
+    train_price_ask_temp[i, 1] <- 75
+    train_price_ask_temp[i, 2] <- i
+    train_price_ask_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 75, 107 + i*2])
+  }
+   
+  train_price_bid <- rbind(train_price_bid, train_price_bid_temp)
+  train_price_ask <- rbind(train_price_ask, train_price_ask_temp)
+
+  
+  for(i in 1:50)
+  {
+    train_price_bid_temp[i, 1] <- 100
+    train_price_bid_temp[i, 2] <- i
+    train_price_bid_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 100, 6 + i*4])
+    train_price_ask_temp[i, 1] <- 100
+    train_price_ask_temp[i, 2] <- i
+    train_price_ask_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 100, 7 + i*4])
+    
+  }
+  for(i in 51:100)
+  {
+    train_price_bid_temp[i, 1] <- 100
+    train_price_bid_temp[i, 2] <- i
+    train_price_bid_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 100, 106 + i*2])
+    train_price_ask_temp[i, 1] <- 100
+    train_price_ask_temp[i, 2] <- i
+    train_price_ask_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 100, 107 + i*2])
+  }
+   
+  train_price_bid <- rbind(train_price_bid, train_price_bid_temp)
+  train_price_ask <- rbind(train_price_ask, train_price_ask_temp)
+  
+  
+  
+  train_price_bid_plot <- ggplot(train_price_bid, aes(x = Event_t, y = Price, color = factor(Security_Id))) + geom_line() + 
+    theme(axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) + facet_wrap( ~ Security_Id, ncol = 2, scales = "free") + guides(color = guide_legend(title = "Security ID"))
+  
+  train_price_ask_plot <- ggplot(train_price_ask, aes(x = Event_t, y = Price, color = factor(Security_Id))) + geom_line() + 
+    theme(axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) + facet_wrap( ~ Security_Id, ncol = 2, scales = "free") + guides(color = guide_legend(title = "Security ID"))
+
+  train_price_bid_plot
+  ggsave("../figs/price_bid_train.png")
+  train_price_ask_plot
+  ggsave("../figs/price_ask_train.png")
+}
 ```
 
 ### Step 3: Process Data
