@@ -27,9 +27,9 @@ source("../lib/functions.R")
 run_visual <- F
 read_data <- F
 process_data <- F
-create_models <- T
-make_pred <- T
-calc_RMSE <- T
+create_models <- F
+make_pred <- F
+calc_RMSE <- F
 sum_RMSE <- T
 run_LR <- T
 run_LR_PCA <- T
@@ -274,7 +274,7 @@ if(calc_RMSE)
   {
     load("../output/LR_PCA_predictions.RData")
     LR_PCA_RMSE <- evaluate_RMSE(LR_PCA_predictions, sample_test)
-    save(LR_PCA_RMSE, file = "../output/LR_RMSE.RData")
+    save(LR_PCA_RMSE, file = "../output/LR_PCA_RMSE.RData")
   }
 }
 
@@ -293,7 +293,7 @@ if(sum_RMSE)
   }
   if(run_LR_PCA)
   {
-    load("../output/LR_RMSE.RData")
+    load("../output/LR_PCA_RMSE.RData")
     cat("RMSE for LR_PCA Model =", LR_PCA_RMSE, "\n")
   }
   
