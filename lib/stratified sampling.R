@@ -13,15 +13,16 @@ save(test, file = "test.Rdata")
 load("train.Rdata")
 load("test.Rdata")
 
+# Since security 81 only has 300+ rows and is not enough for our stratified sampling, we eliminated these rows.
 train<-train[!train$security_id==81,]
 
-
 set.seed(1)
+# We used stratified sampling to get equal proportion of security_id's.
 sample <- train %>%
   group_by(security_id) %>%
   sample_n(size = round(50000/101))
 
-
+# Also get the unsampled set, so that we can stratified sample from the unsampled set.
 unsampled <- train[!train$row_id %in% sample$row_id,]
 
 test <- unsampled %>%
