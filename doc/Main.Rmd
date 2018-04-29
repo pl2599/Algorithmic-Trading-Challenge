@@ -28,8 +28,11 @@ run_visual <- F
 read_data <- F
 process_data <- F
 create_models <- T
-make_pred <- F
+make_pred <- T
+calc_RMSE <- T
+sum_RMSE <- T
 run_LR <- T
+run_LR_PCA <- T
 ```
 
 ### Step 2: Load Data and Make Features
@@ -55,6 +58,7 @@ load("../output/sample_test.RData")
 ```{r}
 if(run_visual)
 {
+  #Creates the vwap visuals
   sample_train$security_id <- factor(sample_train$security_id)
   vwap_train <- ggplot(sample_train, aes(x = security_id, y = trade_vwap, color = trade_vwap)) + geom_point() +     scale_color_gradient(low = "lightgreen", high = "darkblue") + 
     theme(axis.text.x=element_blank(),
@@ -69,21 +73,25 @@ if(run_visual)
   vwap_test
   ggsave("../figs/vwap_test.png")
   
+  #Creates the price visuals for security 25, 50, 75, and 100
   subset_train <- sample_train[sample_train$security_id == 25 | sample_train$security_id == 50 | sample_train$security_id == 75 | sample_train$security_id == 100,]
   subset_test <- sample_test[sample_test$security_id == 25 | sample_test$security_id == 50 |
                                 sample_test$security_id == 75 | sample_test$security_id == 100,]
   
+  #Dataframes separated to bid and ask prices
   train_price_bid <- data.frame(NA, nrow = 400, ncol = 3)
   colnames(train_price_bid) <- c("Security_Id", "Event_t", "Price")
   train_price_ask <- data.frame(NA, nrow = 400, ncol = 3)
   colnames(train_price_ask) <- c("Security_Id", "Event_t", "Price")
   
+  #Temp dataframes to be added to the main dataframes.
   train_price_bid_temp <- data.frame(NA, nrow = 100, ncol = 3)
    colnames(train_price_bid_temp) <- c("Security_Id", "Event_t", "Price")
    
    train_price_ask_temp <- data.frame(NA, nrow = 100, ncol = 3)
    colnames(train_price_ask_temp) <- c("Security_Id", "Event_t", "Price")
   
+  #Security 25
   for(i in 1:50)
   {
     train_price_bid[i, 1] <- 25
@@ -103,6 +111,7 @@ if(run_visual)
     train_price_ask[i, 3] <- colMeans(subset_train[subset_train$security_id == 25, 107 + i*2])
   }
   
+  #Security 50
   for(i in 1:50)
   {
     train_price_bid_temp[i, 1] <- 50
@@ -126,6 +135,7 @@ if(run_visual)
    train_price_bid <- rbind(train_price_bid, train_price_bid_temp)
    train_price_ask <- rbind(train_price_ask, train_price_ask_temp)
    
+   #Security 75
    for(i in 1:50)
   {
     train_price_bid_temp[i, 1] <- 75
@@ -149,7 +159,7 @@ if(run_visual)
   train_price_bid <- rbind(train_price_bid, train_price_bid_temp)
   train_price_ask <- rbind(train_price_ask, train_price_ask_temp)
 
-  
+  #Security 100
   for(i in 1:50)
   {
     train_price_bid_temp[i, 1] <- 100
@@ -217,6 +227,13 @@ if(create_models)
     LR_models <- create_LR_models(sample_train)
     save(LR_models, file = "../output/LR_models.RData")
   }
+  if(run_LR_PCA)
+  {
+    load("../output/train_pca.RData")
+    load("../output/test_pca.RData")
+    LR_PCA_models <- create_LR_PCA_models(sample_train, train_pca)
+    save(LR_PCA_models, file = "../output/LR_PCA_models.RData")
+  }
 }
 ```
 
@@ -229,8 +246,15 @@ if(make_pred)
   {
     load("../output/LR_models.RData")
     
-    LR_predictions <- make_predictions(LR_models, sample_test)
+    LR_predictions <- make_LR_predictions(LR_models, sample_test)
     save(LR_predictions, file = "../output/LR_predictions.RData")
+  }
+  if(run_LR_PCA)
+  {
+    load("../output/LR_PCA_models.RData")
+    LR_PCA_predictions <- make_LR_PCA_predictions(LR_PCA_models, sample_test, test_pca)
+    save(LR_PCA_predictions, file = "../output/LR_PCA_predictions.RData")
+    
   }
 }
 ```
@@ -238,12 +262,40 @@ if(make_pred)
 ### Step 6: Calculate RMSE
 
 ```{r}
-LR_RMSE <- evaluate_RMSE(LR_predictions, sample_test)
+if(calc_RMSE)
+{
+  if(run_LR)
+  {
+    load("../output/LR_predictions.RData")
+    LR_RMSE <- evaluate_RMSE(LR_predictions, sample_test)
+    save(LR_RMSE, file = "../output/LR_RMSE.RData")
+  }
+  if(run_LR_PCA)
+  {
+    load("../output/LR_PCA_predictions.RData")
+    LR_PCA_RMSE <- evaluate_RMSE(LR_PCA_predictions, sample_test)
+    save(LR_PCA_RMSE, file = "../output/LR_RMSE.RData")
+  }
+}
+
 ```
 
 
 ### Step 7: Summarize RMSE
 
 ```{r}
-cat("RMSE for LR Model =", LR_RMSE, "\n")
+if(sum_RMSE)
+{
+  if(run_LR)
+  {
+    load("../output/LR_RMSE.RData")
+    cat("RMSE for LR Model =", LR_RMSE, "\n")
+  }
+  if(run_LR_PCA)
+  {
+    load("../output/LR_RMSE.RData")
+    cat("RMSE for LR_PCA Model =", LR_PCA_RMSE, "\n")
+  }
+  
+}
 ```
