@@ -20,6 +20,14 @@ Term: Spring 2018
 
 ![](https://github.com/GU4243-ADS/project-4-open-project-group3/blob/master/figs/Liquidity%20Replenishment.png)
 
+### A Glimpse of the Data
 
+The price fluctuation of security 25, 50, 75, 100 are as follows:
+
+Bid Price:
+![](https://github.com/GU4243-ADS/project-4-open-project-group3/blob/master/figs/price_bid_train.png)
+
+Ask Price:
+![](https://github.com/GU4243-ADS/project-4-open-project-group3/blob/master/figs/price_ask_train.png)
 
 Contribution statement: [default](doc/a_note_on_contributions.md) All team members contributed equally in all stages of this project. All team members approve our work presented in this GitHub repository including this contributions statement.
