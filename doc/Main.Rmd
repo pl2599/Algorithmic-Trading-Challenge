@@ -1,10 +1,10 @@
 ---
-title: "Main"
+  title: "Main"
 author: "Pak Kin Lai, pl2599"
 date: "4/6/2018"
 output: pdf_document
 ---
-```{r, warning = FALSE}
+  ```{r, warning = FALSE}
 
 if(!require("ggplot2")){
   install.packages("ggplot2")
@@ -37,19 +37,123 @@ run_LR_PCA <- T
 
 ### Step 2: Load Data and Make Features
 
-```{r}
-# if(read_data)
-# {
-#   train <- read.csv("../data/training.csv", as.is = TRUE, header = TRUE)
-#   #test <- read.csv("../data/testing.csv", as.is = TRUE, header = TRUE)
-#   test <- train[(nrow(train)- 49999):nrow(train),]
-#   save(train, file = "../output/train.Rdata")
-#   save(test, file = "../output/test.Rdata")
-#   
-# }
+### Step 2.1: Data prepocessing
 
-load("../output/sample_train.RData")
-load("../output/sample_test.RData")
+* Note that test.csv only contains the first 50 time periods of prices and do not disclose the actual prices of the prices of t51-100. This is why we need to set aside a test set ourselves (using different test set from what other competitors used).
+
+
+```{r step1}
+library("dplyr")
+library("fifer")
+
+###############################################################
+#################### Stratified Sampling ######################
+###############################################################
+
+if(read_data){
+  # Loading the data takes a long time so you could direcly load the Rdata.
+  train <- read.csv("training.csv")
+  save(train, file = "train.Rdata")
+  
+  load("train.Rdata")
+  
+  # Since security 81 only has 300+ rows and is not enough for our stratified sampling, we eliminated these rows.
+  train<-train[!train$security_id==81,]
+  
+  set.seed(1)
+  # We used stratified sampling to get equal proportion of security_id's.
+  sample <- train %>%
+    group_by(security_id) %>%
+    sample_n(size = round(50000/101))
+  
+  # Also get the unsampled set, so that we can stratified sample from the unsampled set.
+  unsampled <- train[!train$row_id %in% sample$row_id,]
+  
+  test <- unsampled %>%
+    group_by(security_id) %>%
+    sample_n(size = round(10000/101))
+  
+  table(sample$security_id)
+  table(test$security_id)
+  
+  sample_train <- sample %>%
+    group_by(security_id) %>%
+    sample_frac(size = 0.75)
+  sample_test <- sample[!sample$row_id %in% sample_train$row_id,]
+  
+  save(sample, file ="../data/sample.Rdata")
+  save(test,file = "../data/test.Rdata")
+  save(sample_train, file = "../data/sample_train.Rdata")
+  save(sample_test, file = "../data/sample_test.Rdata")
+}else{
+  # If directly loading the data files
+  load("../data/sample_train.Rdata")
+  load("../data/sample_test.Rdata")
+  load("../data/test.Rdata")
+}
+
+
+
+
+```
+
+### Step 2.2: PCA Feature
+
+Principal component analysis (PCA) is a statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components. 
+* Note that PCA normally deals with all numerical data whereas in our case we have categorical data (e.g security_id) and binary data (e.g initiator). This requires us to perform a slightly different way of decomposing the dimensions.
+* I tried two packages to compute PCA for mixed data, one that automatically detects the categorical columns and one manually.
+
+```{r}
+
+###############################################################
+############################ PCA ##############################
+###############################################################
+
+install.packages("PCAmixdata")
+library("PCAmixdata")
+install.packages("FactoMineR")
+library("FactoMineR")
+install.packages("dummies")
+library("dummies")
+
+# I first tried automatically using PCA mix
+train_clean <- sample_train[,1:207]
+train_clean <- train_clean[,!(grepl("time",colnames(train_clean)) | grepl("transtype",colnames(train_clean)))]
+train_clean <- train_clean[,-1]
+train_clean$security_id <- as.factor(train_clean$security_id)
+X.quali <- train_clean %>%
+  select(c(security_id,initiator))
+X.quali <- apply(as.matrix(X.quali),2,as.character)
+X.quanti <- train_clean[,-c(1,6)]
+X.quanti <- apply(as.matrix(X.quanti),2,as.numeric)
+X.quanti <- scale(X.quanti)
+
+PCA <- PCAmix(X.quanti, X.quali, rename.level = F, graph = T)
+PCA$quanti$contrib
+# we can see that p_tcount, p_value, trade_vwap and trade_volume are the most important ones for dimension 2-5.
+
+
+# Get the PCA new predictors as features for train and for test
+train_pca <- dummy.data.frame(as.data.frame(train_clean), names = c("security_id","initiator"))
+prin_comp <- prcomp(train_pca, scale. = T)
+prop_varex <- prin_comp$sdev ^ 2/sum(prin_comp$sdev ^ 2)
+plot(prop_varex, xlab = "Principal Component",
+     ylab = "Proportion of Variance Explained",
+     type = "b")
+train_pca <- prin_comp$x[,c(1,2)]
+
+test_clean <- sample_test[,1:207]
+test_clean <- test_clean[,!(grepl("time",colnames(test_clean)) | grepl("transtype",colnames(test_clean)))]
+test_clean <- test_clean[,-1]
+test_pca <- dummy.data.frame(as.data.frame(test_clean), names = c("security_id","initiator"))
+test_pca <- predict(prin_comp,test_pca)
+test_pca <- test_pca[,c(1,2)]
+
+save(train_pca, file = "../output/train_pca.Rdata")
+save(test_pca, file = "../output/test_pca.Rdata")
+
+
+
 ```
 
 
@@ -76,7 +180,7 @@ if(run_visual)
   #Creates the price visuals for security 25, 50, 75, and 100
   subset_train <- sample_train[sample_train$security_id == 25 | sample_train$security_id == 50 | sample_train$security_id == 75 | sample_train$security_id == 100,]
   subset_test <- sample_test[sample_test$security_id == 25 | sample_test$security_id == 50 |
-                                sample_test$security_id == 75 | sample_test$security_id == 100,]
+                               sample_test$security_id == 75 | sample_test$security_id == 100,]
   
   #Dataframes separated to bid and ask prices
   train_price_bid <- data.frame(NA, nrow = 400, ncol = 3)
@@ -86,10 +190,10 @@ if(run_visual)
   
   #Temp dataframes to be added to the main dataframes.
   train_price_bid_temp <- data.frame(NA, nrow = 100, ncol = 3)
-   colnames(train_price_bid_temp) <- c("Security_Id", "Event_t", "Price")
-   
-   train_price_ask_temp <- data.frame(NA, nrow = 100, ncol = 3)
-   colnames(train_price_ask_temp) <- c("Security_Id", "Event_t", "Price")
+  colnames(train_price_bid_temp) <- c("Security_Id", "Event_t", "Price")
+  
+  train_price_ask_temp <- data.frame(NA, nrow = 100, ncol = 3)
+  colnames(train_price_ask_temp) <- c("Security_Id", "Event_t", "Price")
   
   #Security 25
   for(i in 1:50)
@@ -131,12 +235,12 @@ if(run_visual)
     train_price_ask_temp[i, 2] <- i
     train_price_ask_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 50, 107 + i*2])
   }
-   
-   train_price_bid <- rbind(train_price_bid, train_price_bid_temp)
-   train_price_ask <- rbind(train_price_ask, train_price_ask_temp)
-   
-   #Security 75
-   for(i in 1:50)
+  
+  train_price_bid <- rbind(train_price_bid, train_price_bid_temp)
+  train_price_ask <- rbind(train_price_ask, train_price_ask_temp)
+  
+  #Security 75
+  for(i in 1:50)
   {
     train_price_bid_temp[i, 1] <- 75
     train_price_bid_temp[i, 2] <- i
@@ -155,10 +259,10 @@ if(run_visual)
     train_price_ask_temp[i, 2] <- i
     train_price_ask_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 75, 107 + i*2])
   }
-   
+  
   train_price_bid <- rbind(train_price_bid, train_price_bid_temp)
   train_price_ask <- rbind(train_price_ask, train_price_ask_temp)
-
+  
   #Security 100
   for(i in 1:50)
   {
@@ -179,7 +283,7 @@ if(run_visual)
     train_price_ask_temp[i, 2] <- i
     train_price_ask_temp[i, 3] <- colMeans(subset_train[subset_train$security_id == 100, 107 + i*2])
   }
-   
+  
   train_price_bid <- rbind(train_price_bid, train_price_bid_temp)
   train_price_ask <- rbind(train_price_ask, train_price_ask_temp)
   
@@ -192,7 +296,7 @@ if(run_visual)
   train_price_ask_plot <- ggplot(train_price_ask, aes(x = Event_t, y = Price, color = factor(Security_Id))) + geom_line() + 
     theme(axis.text.x=element_blank(),
           axis.ticks.x=element_blank()) + facet_wrap( ~ Security_Id, ncol = 2, scales = "free") + guides(color = guide_legend(title = "Security ID"))
-
+  
   train_price_bid_plot
   ggsave("../figs/price_bid_train.png")
   train_price_ask_plot
@@ -222,7 +326,7 @@ if(create_models)
   if(run_LR)
   {
     #load("../output/train_LR.RData")
-
+    
     #LR_models <- create_LR_models(train_LR)
     LR_models <- create_LR_models(sample_train)
     save(LR_models, file = "../output/LR_models.RData")
