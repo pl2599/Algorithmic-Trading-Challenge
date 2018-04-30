@@ -196,7 +196,7 @@ LR_PCA RMSE by security:
 
 
 Contribution statement: 
-+ Wanting Cheng:
++ Wanting Cheng: Stratified Sampling, putting together main.Rmd, short time series prediction and visualization, PCA analysis. 
 + Jiongjiong Li:
 + Kai Li:
 + Chunzi Wang:
