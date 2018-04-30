@@ -10,7 +10,10 @@ output: pdf_document
 if(!require("ggplot2")){
   install.packages("ggplot2")
 }
-packages.used <- c("ggplot2", "dplyr", "tibble", "tidyr",  "stringr", "tidytext", "topicmodels", "wordcloud", "ggridges","SnowballC")
+if(!require("ggplot2")){
+  install.packages("ggplot2")
+}
+packages.used <- c("ggplot2", "xts", "dygraphs", "tseries",  "forecast", "Metrics", "tidyr", "dplyr", "fifer","PCAmixdata","FactoMineR","dummies")
 
 # check packages that need to be installed.
 packages.needed <- setdiff(packages.used, intersect(installed.packages()[,1], packages.used))
