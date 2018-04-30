@@ -34,8 +34,15 @@ library("dummies")
 ### Step 0: Specify Directories and Source
 
 ```{r wkdir}
-# setwd("~/Documents/GitHub/project-4-open-project-group3/doc") 
+# for macbook users
+setwd("~/Documents/GitHub/project-4-open-project-group3/doc") 
 source("../lib/functions.R")
+```
+
+```{r}
+# for PC users
+setwd("E:/GitHub/project-4-open-project-group3/doc") 
+source("E:/GitHub/project-4-open-project-group3/lib/functions.R")
 ```
 
 ### Step 1: Setup Controls
@@ -700,4 +707,24 @@ if(sum_RMSE)
   }
   
 }
+```
+
+### Step 7.3: RMSE for Lasso
+
+calculate rmse for each security to plot a histogram of rmse to see the distribution. 
+
+It's obvious that the majority of rmse for each security is below 5. There're some outliers that impact our result. Here we tried to remove the outliers and calculate the mean rmse overall and it's around 1.94.
+
+```{r}
+# initiate a rmse vector to store the rmse for every security
+rmse_vec <- rep(NA,101)
+
+for (i in 1:101) {
+  rmse_vec[i] <- rmse(pred.mat[(124*(i-1)+1):(124*i),],test.mat[(124*(i-1)+1):(124*i),])
+}
+
+hist(rmse_vec,breaks=20,col="forestgreen",border="black")
+
+# remove the outlier to see the overall rmse
+mean(rmse_vec[which(rmse_vec<7)])
 ```
