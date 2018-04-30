@@ -1,23 +1,40 @@
 ---
-  title: "Main"
-author: "Pak Kin Lai, pl2599"
+title: "Main"
+author: "Group 3"
 date: "4/6/2018"
 output: pdf_document
 ---
-  ```{r, warning = FALSE}
+
+```{r, warning = FALSE}
 
 if(!require("ggplot2")){
   install.packages("ggplot2")
 }
 
 library(ggplot2)
+library("xts")
+library("dygraphs")
+library("tseries")
+library("forecast")
+library("Metrics")
+library(tidyr)
+library("dplyr")
+library("fifer")
+
+# install.packages("PCAmixdata")
+library("PCAmixdata")
+# install.packages("FactoMineR")
+library("FactoMineR")
+# install.packages("dummies")
+library("dummies")
+
 ```
 
 
 ### Step 0: Specify Directories and Source
 
 ```{r wkdir}
-setwd("~/Documents/GitHub/project-4-open-project-group3/doc") 
+# setwd("~/Documents/GitHub/project-4-open-project-group3/doc") 
 source("../lib/functions.R")
 ```
 
@@ -28,11 +45,13 @@ run_visual <- F
 read_data <- F
 process_data <- F
 create_models <- F
+load_model <- F
 make_pred <- F
 calc_RMSE <- F
 sum_RMSE <- T
-run_LR <- T
-run_LR_PCA <- T
+run_LR <- F
+run_LR_PCA <- F
+run_RF <- F
 ```
 
 ### Step 2: Load Data and Make Features
@@ -40,11 +59,11 @@ run_LR_PCA <- T
 ### Step 2.1: Data prepocessing
 
 * Note that test.csv only contains the first 50 time periods of prices and do not disclose the actual prices of the prices of t51-100. This is why we need to set aside a test set ourselves (using different test set from what other competitors used).
+* Please download the data files using the link to the google drive. The data is too large to upload to the github.
 
 
 ```{r step1}
-library("dplyr")
-library("fifer")
+
 
 ###############################################################
 #################### Stratified Sampling ######################
@@ -89,15 +108,21 @@ if(read_data){
   # If directly loading the data files
   load("../data/sample_train.Rdata")
   load("../data/sample_test.Rdata")
-  load("../data/test.Rdata")
 }
-
-
 
 
 ```
 
-### Step 2.2: PCA Feature
+### Step 2.2: Baseline Feature
+
+According to the discussion panel of the Kaggle competition, the most important columns in the data are: 
+* trade_vwap 
+* bid41 
+* bid50 
+* ask50
+Therefore, our baseline feature is these four columns in the dataset.
+
+### Step 2.3: PCA Feature
 
 Principal component analysis (PCA) is a statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components. 
 * Note that PCA normally deals with all numerical data whereas in our case we have categorical data (e.g security_id) and binary data (e.g initiator). This requires us to perform a slightly different way of decomposing the dimensions.
@@ -109,12 +134,7 @@ Principal component analysis (PCA) is a statistical procedure that uses an ortho
 ############################ PCA ##############################
 ###############################################################
 
-install.packages("PCAmixdata")
-library("PCAmixdata")
-install.packages("FactoMineR")
-library("FactoMineR")
-install.packages("dummies")
-library("dummies")
+
 
 # I first tried automatically using PCA mix
 train_clean <- sample_train[,1:207]
@@ -122,7 +142,7 @@ train_clean <- train_clean[,!(grepl("time",colnames(train_clean)) | grepl("trans
 train_clean <- train_clean[,-1]
 train_clean$security_id <- as.factor(train_clean$security_id)
 X.quali <- train_clean %>%
-  select(c(security_id,initiator))
+  dplyr:: select(c(security_id,initiator))
 X.quali <- apply(as.matrix(X.quali),2,as.character)
 X.quanti <- train_clean[,-c(1,6)]
 X.quanti <- apply(as.matrix(X.quanti),2,as.numeric)
@@ -156,8 +176,87 @@ save(test_pca, file = "../output/test_pca.Rdata")
 
 ```
 
+### Step 2.4: Time Series Data Processing
 
-### Step 2.5: Data Visualization
+In training set, every security has 371 rows. There're 101 securities in total, lack security 81. (1-80,82-102)
+
+In test set, every security has 124 rows.
+
+Every row has 100 bid prices and 100 ask prices. The latter 50 bid and ask prices are the response after liquidity shock. In training set we will contain that in the input of time series model but in the test set that's what we will predict.
+
+We created a time series matrix by combining all the bid and ask price of rows belong to the same security into a long column. So the dimension of training matrix is (371*100) rows and (101*2) columns and the test matrix is (124*100) rows and (101*2) columns. 
+
+Functions:
++ data_to_ts
+
+```{r}
+
+###############################################################
+################## Making time series data ####################
+###############################################################
+if(process_data){
+  
+# initiate time series matrix
+ts_train_matrix <- matrix(NA,nrow=37100,ncol=204)
+ts_test_matrix <- matrix(NA,nrow=12400,ncol=204)
+
+# transform data into time series matrix
+ts_train_matrix <- data_to_ts(sample_train,ts_train_matrix)
+ts_test_matrix <- data_to_ts(sample_test,ts_test_matrix)
+
+# Check if all space on matrix is correctly filled in
+sum(is.na(ts_train_matrix))
+sum(is.na(ts_test_matrix))
+
+# same time series matrix
+save(ts_train_matrix, file = "../output/ts_train_matrix.Rdata")
+save(ts_test_matrix,file="../output/ts_test_matrix.RData")
+}else{
+load("../output/ts_train_matrix.Rdata")
+load("../output/ts_test_matrix.Rdata")
+}
+```
+
+### Step 2.5: Lasso Data Matrix Creation
+
+Limitations of lasso: impute data must be matrix. So I only use p_tcount, p_value, trade_vwap, trade_volume, 50 bid and ask prices as predictors, and this arrangement will lose information on initiator and transtype of per bid and ask. That's the trade-off.
+
+```{r}
+if(process_data){
+  
+  # initiate training matrix
+  train.mat <- matrix(NA,nrow=37471,ncol=204)
+  train.mat[,1:4] <- as.matrix(sample_train[,3:6])
+  train.mat[,105:204] <- as.matrix(sample_train[,208:307])
+  
+  for (i in 1:50) {
+    train.mat[,(2*i+3)] <- as.matrix(sample_train[,(6+i*4)])
+    train.mat[,(2*i+4)] <- as.matrix(sample_train[,(7+i*4)])
+  }
+  
+  # initiate test matrix
+  test.mat <- matrix(NA,nrow=12524,ncol=204)
+  test.mat[,1:4] <- as.matrix(sample_test[,3:6])
+  test.mat[,105:204] <- as.matrix(sample_test[,208:307])
+  
+  for (i in 1:50) {
+    test.mat[,(2*i+3)] <- as.matrix(sample_test[,(6+i*4)])
+    test.mat[,(2*i+4)] <- as.matrix(sample_test[,(7+i*4)])
+  }
+  
+  # initiate prediction matrix 
+  pred.mat <- test.mat
+  pred.mat[,105:204] <- NA
+}
+```
+
+
+
+
+
+### Step 3: Data Visualization
+
+### Step 3.1: Visualization for panel data
 
 ```{r}
 if(run_visual)
@@ -304,21 +403,62 @@ if(run_visual)
 }
 ```
 
-### Step 3: Process Data
+### Step 3.2: Time series visualization
+
+* It can be seen that the time series is non-stationary,non-seasonal and not normal if we just use single row as a time series.
+* After we convert to a long time series, we get stationary, seasonal and normal time series
 
 ```{r}
-# if(process_data)
-# {
-#   if(run_LR)
-#   {
-#     train_LR <- LR_data_process(sample_train)
-#     save(train_LR, file = "../output/train_LR.Rdata")
-#   }
-# }
+################################# Short Time Series ###############################
+
+  #This is what we tried to do at first 
+load("../output/short_mat.Rdata")
+times <- seq(as.Date("2017-05-01"),length=100,by="days")
+short_xts <- xts(short_mat,order.by = times)
+dygraph(short_xts[,1:2],main = 'Short version') %>%
+  dyRangeSelector()  %>% 
+  dyOptions(axisLineWidth = 1.5, fillGraph = FALSE, drawGrid = T, rightGap=50)
+# Doing ARIMA prediction for the first time series - short version
+# Check by Dickey-fuller test, we can not reject the null hypothesis
+adf.test(short_xts[,1], "stationary")
+
+# Problem: data is not normal, in fact extremely skewed
+hist(short_xts[,1])
+
+################################# Long Time Series ###############################
+times <- seq(as.Date("2017-05-01"),length=37100,by="days")
+train_xts <- xts(ts_train_matrix,order.by = times)
+dygraph(train_xts[,1:2],main = 'Long version') %>%
+  dyRangeSelector()  %>% 
+  dyOptions(axisLineWidth = 1.5, fillGraph = FALSE, drawGrid = T, rightGap=50)
+
+# Doing ARIMA prediction for the first time series
+# Check by Dickey-fuller test, we reject the null hypothesis
+adf.test(train_xts[,1], "stationary")
+
+# auto.arima automatically searches for the optimal p and q to be used in the ARIMA model
+fit <- auto.arima(train_xts[,1], seasonal = F, max.p = 10, max.q = 10)
+
+tsdisplay(residuals(fit), lag.max=45, main='(2,2,2) Model Residuals')
+
+# See how the model would perform on the 51-100 time interval
+hold <- window(ts(train_xts[,1]), start=51)
+
+fit_first_half = auto.arima(train_xts[1:50,1])
+
+fcast_second_half <- forecast(fit_first_half,h=50)
+plot(fcast_second_half, main=" ")
+lines(ts(train_xts[,1]))
+
+# Check: data is normal
+hist(train_xts[,1])
+
 
 ```
 
 ### Step 4: Create Models
+
+### Step 4.1: Model fitting
 
 ```{r}
 if(create_models)
@@ -338,6 +478,90 @@ if(create_models)
     LR_PCA_models <- create_LR_PCA_models(sample_train, train_pca)
     save(LR_PCA_models, file = "../output/LR_PCA_models.RData")
   }
+  if(run_RF)
+  {
+    RF_models <- rf_train(sample_train)
+    save(RF_models, file = "../output/RF_models.RData")
+  }if(run_GBM){
+    gbm_model <- gbm_train(sample_train)
+    save(gbm_model, file = "../output/GBM_model.RData")
+  }if(run_SVM){
+    svm_model <- svm_train(sample_train)
+    save(svm_model, file = "../output/SVM_model.RData")
+  }if(run_GBM)
+  {
+    load("../output/train_pca.RData")
+    load("../output/test_pca.RData")
+    gbm_pca <- gbm_train_PCA(train_pca)
+    save(gbm_pca, file = "../output/GBM_PCA.RData")
+  }if(run_SVM)
+  {
+    load("../output/train_pca.RData")
+    load("../output/test_pca.RData")
+    svm_pca <- svm_train_PCA(train_pca)
+    save(svm_pca, file = "../output/SVM_PCA.RData")
+  }
+}
+if(load_model){
+  
+  load("../output/GBM_model.Rdata")
+  load("../output/SVM_model.Rdata")
+  load("../output/GBM_PCA.Rdata")
+  load("../output/SVM_PCA.Rdata")
+  load("../output/RF_models.Rdata")
+  load("../output/LR_models.Rdata")
+  load("../output/LR_PCA_models.Rdata")
+
+}
+
+
+```
+
+### Step 4.2: Time series ARIMA modeling and prediction
+We wrote model fitting and predicting in the same for loop and didn't save the models (there are too many of them).
+
+Function:
++ predict_ts
+
+```{r}
+if(create_models){
+  
+  # copy a new test_matrix to calculate prediction rmse.
+  ts_pred_matrix <- ts_test_matrix
+  dim(ts_pred_matrix)
+  
+  # turn the 50-100 response chunks into NA for every 100 rows.
+  for (i in 1:124) {
+    ts_pred_matrix[((i-1)*100+51):(i*100),] <- NA
+  }
+  
+  # prediction
+  ts_pred_matrix <- predict_ts(ts_train_matrix,ts_pred_matrix)
+  
+  # check if all space on matrix is correctly filled in
+  sum(is.na(ts_pred_matrix))
+  
+  save(ts_pred_matrix,file="../output/ts_pred_matrix.RData")
+}else{
+  load("../output/ts_pred_matrix.Rdata")
+}
+```
+
+### Step 4.3: Lasso modeling and prediction
+We wrote model fitting and predicting in the same for loop and didn't save the models (can't afford to save them, it's too large).
+```{r}
+if(create_models){
+  
+  # run prediction on lasso model
+  pred.mat <- predict_lasso(train.mat,pred.mat)
+  
+  # check if the matrix has been filled in correctly
+  sum(is.na(pred.mat))
+  
+  # save prediction matrix
+  save(pred.mat,file="../output/lasso_pred_matrix.RData")
+}else{
+  load("../output/lasso_pred_matrix.Rdata")
 }
 ```
 
@@ -361,7 +585,11 @@ if(make_pred)
     
   }
 }
+
 ```
+
+
+
 
 ### Step 6: Calculate RMSE
 
@@ -386,6 +614,26 @@ if(calc_RMSE)
 
 
 ### Step 7: Summarize RMSE
+
+### Step 7.1: RMSE for time series
+
+calculate rmse for each column to plot a histogram of rmse to see the distribution. 
+
+It's obvious that the majority of rmse for each security is below 2. There're some outliers that impact our result. Here we tried to remove the outliers and calculate the mean rmse overall and it's around 0.96.
+
+```{r}
+rmse_vec <- rep(NA,202)
+
+for (i in 1:202) {
+  rmse_vec[i] <- rmse(pred_matrix[,i],test_matrix[,i])
+}
+
+hist(rmse_vec,breaks=40,col="orange",border="black")
+
+# remove the outlier to see the overall rmse
+mean(rmse_vec[which(rmse_vec<3)])
+```
+
 
 ```{r}
 if(sum_RMSE)
