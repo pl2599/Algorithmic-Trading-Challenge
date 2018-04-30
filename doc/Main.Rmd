@@ -271,7 +271,39 @@ Limitations of lasso: impute data must be matrix. So I only use p_tcount, p_valu
   pred.mat[,105:204] <- NA
 
 ```
+### Step2.6 Financial Features
+We also extract features with financial meaning:
+Price (EMA and increment)
+Exponential moving average (distribute different weights to different days)
+Number of price increments during the past 5 days
+Liquidity book
+Bid and ask price increase between two consecutive quotes
+Spread
+Bid/ask price spread on Day50 
+Rate
+Number of quotes over number of trades during the last n events
 
+```{r}
+# EMA generate
+
+
+rate              <- apply(sample_train, MARGIN = 1, rate_cal)
+rate              <- as.data.frame(rate_train)
+sample_train_fin  <- cbind(sample_train,rate)
+
+liquidity_book_bid    <- apply(sample_train_fin, MARGIN = 1, liquidity_book_bid_cal)
+liquidity_book_ask    <- apply(sample_train_fin, MARGIN = 1, liquidity_book_ask_cal)
+liquidity_book_bid    <- as.data.frame(rate_train)
+colnames(liquidity_book_bid) <- c("liquidity_book_bid")
+liquidity_book_ask    <- as.data.frame(rate_train)
+colnames(liquidity_book_ask) <- c("liquidity_book_ask")
+sample_train_fin  <- cbind(sample_train_fin,liquidity_book_bid,liquidity_book_ask)
+
+sample_train_fin  <- EMA(sample_train_fin, lambda=0.9)
+sample_train_fin  <- increment(sample_train_fin)
+sample_train_fin   <- spread(sample_train_fin)
+
+```
 
 
 
