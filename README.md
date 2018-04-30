@@ -122,6 +122,7 @@ First Attempt:
 + Prediction result around RMSE = 2
 
 Second Attempt:
+
 Since each row only have 100 data points, that’s too limited to produce meaningful forecasting results, so we combined every row of each security together to train arima model using the whole training data and input the new test data predictors to predict the response and compare with the original response. It returns better prediction results than the original attempt.
 
 Time Series Plots:
