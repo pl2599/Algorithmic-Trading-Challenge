@@ -628,7 +628,6 @@ make_GBM_predictions <- function(model, test){
 }
 
 
-
 # generage exponential moving average feature
 
 EMA<-function(data_in,lambda=0.9){
@@ -640,8 +639,6 @@ EMA<-function(data_in,lambda=0.9){
   data_in$EMA_ask<-result
   return(data_in)
 }
-
-
 
 
 # generate price increment feature
@@ -672,8 +669,6 @@ increment<-function(data_in) {
 }
 
 
-
-
 # generate spread (price difference between bid and ask) feature
 
 spread<-function(data_in){
@@ -684,7 +679,64 @@ spread<-function(data_in){
 }
 
 
+# Rate feature
+rate_cal <-  function(row){
+  a <- sum(row == "Q")
+  b <- sum(row == "T")
+  if (b ==0){
+    r <- 49
+  }else{
+    r <- a/b
+  }
+  return(r)
+  
+}
 
+#Liquidity book
+liquidity_book_bid_cal <- function(row){
+  index <- which(row[] == "Q")
+  l <- list()
+  if (length(index) >=2){
+    for (i in 2:length(index)){
+      if(index[i-1]+4 == index[i]){
+        a1 <- as.numeric(row[c(index[i]+2)])
+        a2 <- as.numeric(row[c(index[i-1]+2)])
+        c <- a1-a2
+        if (c >= 0 & c(index[i])<= 206){
+          l[i] <- c
+        }
+      }
+      l <- Filter(Negate(is.null), l)
+      if (length(l) == 0){
+        l[[1]]<-0
+      }
+    }
+  }else{
+    l[[1]]<-0
+  }
+  return(Reduce("+",l))
+}
 
-
-
+liquidity_book_ask_cal <- function(row){
+  index <- which(row[] == "Q")
+  l <- list()
+  if (length(index) >=2){
+    for (i in 2:length(index)){
+      if(index[i-1]+4 == index[i]){
+        a1 <- as.numeric(row[c(index[i]+3)])
+        a2 <- as.numeric(row[c(index[i-1]+3)])
+        c <- a1-a2
+        if (c >= 0 & c(index[i])<= 206){
+          l[i] <- c
+        }
+      }
+      l <- Filter(Negate(is.null), l)
+      if (length(l) == 0){
+        l[[1]]<-0
+      }
+    }
+  }else{
+    l[[1]]<-0
+  }
+  return(Reduce("+",l))
+}
