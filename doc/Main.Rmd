@@ -10,6 +10,15 @@ output: pdf_document
 if(!require("ggplot2")){
   install.packages("ggplot2")
 }
+packages.used <- c("ggplot2", "dplyr", "tibble", "tidyr",  "stringr", "tidytext", "topicmodels", "wordcloud", "ggridges","SnowballC")
+
+# check packages that need to be installed.
+packages.needed <- setdiff(packages.used, intersect(installed.packages()[,1], packages.used))
+
+# install additional packages
+if(length(packages.needed) > 0) {
+  install.packages(packages.needed, dependencies = TRUE, repos = 'http://cran.us.r-project.org')
+}
 
 library(ggplot2)
 library("xts")
