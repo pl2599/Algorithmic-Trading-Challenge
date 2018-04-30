@@ -197,7 +197,7 @@ LR_PCA RMSE by security:
 
 Contribution statement: 
 + Wanting Cheng: Stratified Sampling, putting together main.Rmd, short time series prediction and visualization, PCA analysis. 
-+ Jiongjiong Li:
-+ Kai Li:
++ Jiongjiong Li: SVM, GBM and Random Forest model part, Feature extraction, writing slides and readme review.
++ Kai Li: SVM, GBM and Radom Forest prediction part, Feature extraction, slides
 + Chunzi Wang:
 + Pak Kin Lai: Created and evaluated LR models from scratch. In charge of visualizations of the data. Major contributor to the Main file.
