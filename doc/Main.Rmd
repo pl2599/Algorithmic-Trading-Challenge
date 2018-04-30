@@ -2,7 +2,8 @@
 title: "Main"
 author: "Group 3"
 date: "4/6/2018"
-output: pdf_document
+always_allow_html: yes
+output: word_document
 ---
 
 ```{r, warning = FALSE}
@@ -35,14 +36,14 @@ library("dummies")
 
 ```{r wkdir}
 # for macbook users
-setwd("~/Documents/GitHub/project-4-open-project-group3/doc") 
+# setwd("~/Documents/GitHub/project-4-open-project-group3/doc") 
 source("../lib/functions.R")
 ```
 
 ```{r}
 # for PC users
-setwd("E:/GitHub/project-4-open-project-group3/doc") 
-source("E:/GitHub/project-4-open-project-group3/lib/functions.R")
+# setwd("E:/GitHub/project-4-open-project-group3/doc") 
+# source("E:/GitHub/project-4-open-project-group3/lib/functions.R")
 ```
 
 ### Step 1: Setup Controls
@@ -159,7 +160,7 @@ X.quanti <- apply(as.matrix(X.quanti),2,as.numeric)
 X.quanti <- scale(X.quanti)
 
 PCA <- PCAmix(X.quanti, X.quali, rename.level = F, graph = T)
-PCA$quanti$contrib
+
 # we can see that p_tcount, p_value, trade_vwap and trade_volume are the most important ones for dimension 2-5.
 
 
@@ -232,8 +233,7 @@ load("../output/ts_test_matrix.Rdata")
 Limitations of lasso: impute data must be matrix. So I only use p_tcount, p_value, trade_vwap, trade_volume, 50 bid and ask prices as predictors, and this arrangement will lose information on initiator and transtype of per bid and ask. That's the trade-off.
 
 ```{r}
-if(process_data){
-  
+
   # initiate training matrix
   train.mat <- matrix(NA,nrow=37471,ncol=204)
   train.mat[,1:4] <- as.matrix(sample_train[,3:6])
@@ -257,7 +257,7 @@ if(process_data){
   # initiate prediction matrix 
   pred.mat <- test.mat
   pred.mat[,105:204] <- NA
-}
+
 ```
 
 
