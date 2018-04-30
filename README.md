@@ -54,3 +54,11 @@ Spread
 Rate
 - Number of quotes over number of trades during the last n events
 
+### Models we used
+- Linear Regression
+- Random Forest
+- ARIMA Time Series
+- Lasso Regression
+- GBM
+- SVM
+
