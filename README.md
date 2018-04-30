@@ -35,18 +35,19 @@ Contribution statement: [default](doc/a_note_on_contributions.md) All team membe
 ### Feature extraction
 1. PCA
 2. Semantically meaningful features
-Price (information about the bid/ask normalized price time series)
-Liquidity book (information about the depth of the liquidity book)
-Spread (information about the bid/ask spread)
-Rate (information about the arrival rate of orders and/or quotes)
+
+-Price (information about the bid/ask normalized price time series)
+-Liquidity book (information about the depth of the liquidity book)
+-Spread (information about the bid/ask spread)
+-Rate (information about the arrival rate of orders and/or quotes)
 
 Price
-Exponential moving average (distribute different weights to different days)
-Number of price increments during the past 5 days
+-Exponential moving average (distribute different weights to different days)
+-Number of price increments during the past 5 days
 Liquidity book
-Bid and ask price increase between two consecutive quotes
+-Bid and ask price increase between two consecutive quotes
 Spread
-Bid/ask price spread on Day50 
+-Bid/ask price spread on Day50 
 Spread
-Number of quotes over number of trades during the last n events
+-Number of quotes over number of trades during the last n events
 
