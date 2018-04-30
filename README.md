@@ -44,10 +44,13 @@ Contribution statement: [default](doc/a_note_on_contributions.md) All team membe
 Price
 - Exponential moving average (distribute different weights to different days)
 - Number of price increments during the past 5 days
+
 Liquidity book
 - Bid and ask price increase between two consecutive quotes
+
 Spread
 - Bid/ask price spread on Day50 
-Spread
+
+Rate
 - Number of quotes over number of trades during the last n events
 
