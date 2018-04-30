@@ -100,14 +100,14 @@ Future events will depend on post-liquidity shock events to be predicted. In thi
 Separate data into Buyer Initiated and Seller Initiated subsets
 Use Trade Volume Weighted Average Price, Bid 41, Bid 50, Ask 50 as Predictor Variables
 Total of 200 Models are used to calculate the buy and ask price from t=51 to t=100
-(50 x 2 x 2) → (Time x Buyer/Seller Initiated x Bid/Ask)
+(50 x 2 x 2) ??? (Time x Buyer/Seller Initiated x Bid/Ask)
 
 #### Random Forest
 
 Same predictor chosen as Linear Regression
 Trade Volume Weighted Average Price, Bid 41, Bid 50, Ask 50 as Predictor Variables
 Models
-+ Total of 200 Models are used to calculate the buy and ask price from t=51 to t=100 (50 x 2 x 2) → (Time x Buyer/Seller Initiated x Bid/Ask)
++ Total of 200 Models are used to calculate the buy and ask price from t=51 to t=100 (50 x 2 x 2) ??? (Time x Buyer/Seller Initiated x Bid/Ask)
 Advantages
 + Reduction in overfitting
 + Less in variance
@@ -123,7 +123,7 @@ First Attempt:
 
 Second Attempt:
 
-Since each row only have 100 data points, that’s too limited to produce meaningful forecasting results, so we combined every row of each security together to train arima model using the whole training data and input the new test data predictors to predict the response and compare with the original response. It returns better prediction results than the original attempt.
+Since each row only have 100 data points, that???s too limited to produce meaningful forecasting results, so we combined every row of each security together to train arima model using the whole training data and input the new test data predictors to predict the response and compare with the original response. It returns better prediction results than the original attempt.
 
 Time Series Plots:
 
@@ -155,7 +155,7 @@ Trade Volume Weighted Average Price, Bid 41, Bid 50, Ask 50 as Predictor Variabl
 Result
 
 Models
-Total of 200 Models are used to calculate the buy and ask price from t=51 to t=100 (50 x 2 x 2) → (Time x Buyer/Seller Initiated x Bid/Ask)
+Total of 200 Models are used to calculate the buy and ask price from t=51 to t=100 (50 x 2 x 2) ??? (Time x Buyer/Seller Initiated x Bid/Ask)
 
 Advantages
 GBM models are expressive
@@ -193,6 +193,9 @@ LR RMSE by security:
 LR_PCA RMSE by security:
 
 ![](https://github.com/GU4243-ADS/project-4-open-project-group3/blob/master/figs/LR_PCA_RMSE_by_Sec.png)
+
+Final result:
+![](https://github.com/GU4243-ADS/project-4-open-project-group3/blob/master/figs/results.jpeg)
 
 
 Contribution statement: 
