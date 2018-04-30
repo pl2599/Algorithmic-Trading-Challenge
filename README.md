@@ -195,6 +195,7 @@ LR_PCA RMSE by security:
 ![](https://github.com/GU4243-ADS/project-4-open-project-group3/blob/master/figs/LR_PCA_RMSE_by_Sec.png)
 
 Final result:
+
 ![](https://github.com/GU4243-ADS/project-4-open-project-group3/blob/master/figs/results.jpeg)
 
 
