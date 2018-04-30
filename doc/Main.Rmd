@@ -34,24 +34,34 @@ library("dummies")
 ### Step 0: Specify Directories and Source
 
 ```{r wkdir}
-# setwd("~/Documents/GitHub/project-4-open-project-group3/doc") 
+# for macbook users
+setwd("~/Documents/GitHub/project-4-open-project-group3/doc") 
 source("../lib/functions.R")
+```
+
+```{r}
+# for PC users
+setwd("E:/GitHub/project-4-open-project-group3/doc") 
+source("E:/GitHub/project-4-open-project-group3/lib/functions.R")
 ```
 
 ### Step 1: Setup Controls
 
 ```{r setup, echo=FALSE}
-run_visual <- F
+run_visual <- T
 read_data <- F
 process_data <- F
 create_models <- F
 load_model <- F
 make_pred <- F
-calc_RMSE <- F
+calc_RMSE <- T
 sum_RMSE <- T
 run_LR <- F
 run_LR_PCA <- F
 run_RF <- F
+run_GBM <- F
+run_SVM <- F
+
 ```
 
 ### Step 2: Load Data and Make Features
@@ -253,12 +263,13 @@ if(process_data){
 
 
 
-
 ### Step 3: Data Visualization
 
 ### Step 3.1: Visualization for panel data
 
+
 ```{r}
+
 if(run_visual)
 {
   #Creates the vwap visuals
@@ -460,14 +471,15 @@ hist(train_xts[,1])
 
 ### Step 4.1: Model fitting
 
+#### Note that since the models are too large, we moved it to the google drive, together with the data files.
+
 ```{r}
+
 if(create_models)
 {
   if(run_LR)
   {
-    #load("../output/train_LR.RData")
-    
-    #LR_models <- create_LR_models(train_LR)
+
     LR_models <- create_LR_models(sample_train)
     save(LR_models, file = "../output/LR_models.RData")
   }
@@ -482,19 +494,23 @@ if(create_models)
   {
     RF_models <- rf_train(sample_train)
     save(RF_models, file = "../output/RF_models.RData")
-  }if(run_GBM){
+  }
+  if(run_GBM){
     gbm_model <- gbm_train(sample_train)
     save(gbm_model, file = "../output/GBM_model.RData")
-  }if(run_SVM){
+  }
+  if(run_SVM){
     svm_model <- svm_train(sample_train)
     save(svm_model, file = "../output/SVM_model.RData")
-  }if(run_GBM)
+  }
+  if(run_GBM)
   {
     load("../output/train_pca.RData")
     load("../output/test_pca.RData")
     gbm_pca <- gbm_train_PCA(train_pca)
     save(gbm_pca, file = "../output/GBM_PCA.RData")
-  }if(run_SVM)
+  }
+  if(run_SVM)
   {
     load("../output/train_pca.RData")
     load("../output/test_pca.RData")
@@ -504,11 +520,11 @@ if(create_models)
 }
 if(load_model){
   
-  load("../output/GBM_model.Rdata")
-  load("../output/SVM_model.Rdata")
-  load("../output/GBM_PCA.Rdata")
-  load("../output/SVM_PCA.Rdata")
-  load("../output/RF_models.Rdata")
+  load("../data/GBM_model.Rdata")
+  load("../data/SVM_model.Rdata")
+  load("../data/GBM_PCA.Rdata")
+  load("../data/SVM_PCA.Rdata")
+  load("../data/RF_models.Rdata")
   load("../output/LR_models.Rdata")
   load("../output/LR_PCA_models.Rdata")
 
@@ -584,6 +600,27 @@ if(make_pred)
     save(LR_PCA_predictions, file = "../output/LR_PCA_predictions.RData")
     
   }
+  if(run_RF){
+    load("../output/RF_models.Rdata")
+    RF_predict <- test_data(RF_models,sample_test)
+    save(RF_predict, file = "../output/RF_predict.Rdata")
+  }
+  if(run_GBM){
+  gbm_pre <- make_GBM_predictions(gbm_model, sample_test)
+  save(gbm_pre, file = "../output/gbm_pre.Rdata")
+  }
+  if(run_SVM){
+  svm_pre <- make_svm_predictions(svm_model, sample_test)
+  save(svm_pre, file = "../output/svm_pre.Rdata")
+}
+}
+if(load_model){
+    load("../output/LR_predictions.RData")
+    load("../output/LR_PCA_predictions.RData")
+    load("../output/RF_predict.Rdata")
+    load("../output/svm_pre.Rdata")
+    load("../output/gbm_pre.Rdata")
+
 }
 
 ```
@@ -608,6 +645,24 @@ if(calc_RMSE)
     LR_PCA_RMSE <- evaluate_RMSE(LR_PCA_predictions, sample_test)
     save(LR_PCA_RMSE, file = "../output/LR_PCA_RMSE.RData")
   }
+  if(run_RF){
+    # 2.03
+    load("../output/RF_models.Rdata")
+    test_data_actual <- test_data_acutal(sample_test)
+  }
+  if(run_SVM){
+      #951.846
+
+    load("../output/svm_pre.Rdata")
+  rmse_svm <- evalution(svm_pre,sample_test[,208:307])
+  }
+  if(run_GBM){
+        #954. 634
+
+    load("../output/gbm_pre.Rdata")
+  rmse_gbm <- evalution(gbm_pre,sample_test[,208:307])
+  }
+  
 }
 
 ```
@@ -625,7 +680,7 @@ It's obvious that the majority of rmse for each security is below 2. There're so
 rmse_vec <- rep(NA,202)
 
 for (i in 1:202) {
-  rmse_vec[i] <- rmse(pred_matrix[,i],test_matrix[,i])
+  rmse_vec[i] <- rmse(pred_matrix[,i],ts_test_matrix[,i])
 }
 
 hist(rmse_vec,breaks=40,col="orange",border="black")
@@ -633,6 +688,8 @@ hist(rmse_vec,breaks=40,col="orange",border="black")
 # remove the outlier to see the overall rmse
 mean(rmse_vec[which(rmse_vec<3)])
 ```
+
+### Step 7.2: RMSE for Linear Regression
 
 
 ```{r}
@@ -650,4 +707,24 @@ if(sum_RMSE)
   }
   
 }
+```
+
+### Step 7.3: RMSE for Lasso
+
+calculate rmse for each security to plot a histogram of rmse to see the distribution. 
+
+It's obvious that the majority of rmse for each security is below 5. There're some outliers that impact our result. Here we tried to remove the outliers and calculate the mean rmse overall and it's around 1.94.
+
+```{r}
+# initiate a rmse vector to store the rmse for every security
+rmse_vec <- rep(NA,101)
+
+for (i in 1:101) {
+  rmse_vec[i] <- rmse(pred.mat[(124*(i-1)+1):(124*i),],test.mat[(124*(i-1)+1):(124*i),])
+}
+
+hist(rmse_vec,breaks=20,col="forestgreen",border="black")
+
+# remove the outlier to see the overall rmse
+mean(rmse_vec[which(rmse_vec<7)])
 ```
