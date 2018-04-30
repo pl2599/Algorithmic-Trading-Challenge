@@ -200,4 +200,4 @@ Contribution statement:
 + Jiongjiong Li:
 + Kai Li:
 + Chunzi Wang:
-+ Pak Kin Lai:
++ Pak Kin Lai: Created and evaluated LR models from scratch. In charge of visualizations of the data. Major contributor to the Main file.
