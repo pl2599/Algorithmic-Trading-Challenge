@@ -197,11 +197,3 @@ LR_PCA RMSE by security:
 Final result:
 
 ![](https://github.com/GU4243-ADS/project-4-open-project-group3/blob/master/figs/results.jpeg)
-
-
-Contribution statement: 
-+ Wanting Cheng: Stratified Sampling, putting together main.Rmd, short time series prediction and visualization, PCA analysis. 
-+ Jiongjiong Li: SVM, GBM and Random Forest model part, Feature extraction and Data Processing, writing slides and readme review.
-+ Kai Li: SVM, GBM and Radom Forest prediction part, Feature extraction, slides
-+ Chunzi Wang: ARIMA time series modeling and prediction, lasso modeling and prediction. Put together readme.md and initiated presentation slides.
-+ Pak Kin Lai: Created and evaluated LR models from scratch. In charge of visualizations of the data. Major contributor to the Main file.
